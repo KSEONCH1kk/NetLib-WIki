@@ -78,28 +78,45 @@ new RateLimitInterceptor(
 
 ---
 
-### CompressionInterceptor
+### CompressionInterceptor ⚠️ не PacketInterceptor / NOT a PacketInterceptor
 
-Zlib deflate/inflate. Пакеты меньше `threshold` байт не сжимаются.  
-> Zlib deflate/inflate. Packets smaller than `threshold` bytes are not compressed.
+`CompressionInterceptor` **не реализует** `PacketInterceptor`. Добавление через `.interceptor()` **не даёт** сжатие.  
+Это утилитный класс для ручного сжатия байт.  
+> `CompressionInterceptor` does **not** implement `PacketInterceptor`. Adding it via `.interceptor()` does nothing.  
+> It is a byte-level utility class only.
 
+**Для автосжатия** используй `.compress(threshold)` в Builder:
 ```java
-new CompressionInterceptor(256)  // сжимать от 256 байт / compress if payload >= 256 bytes
+Net.server().compress(256).start();    // ← правильно / correct
+Net.server().interceptor(new CompressionInterceptor(256)).start();  // ← ничего не делает / no-op
 ```
 
-> **Примечание:** Перехватчик работает на уровне объектов. Для сжатия на уровне байт нужен отдельный `ChannelHandler`.  
-> **Note:** This interceptor operates at the packet-object level. Byte-level compression requires a separate `ChannelHandler`.
+Ручное использование / Manual use:
+```java
+CompressionInterceptor util = new CompressionInterceptor(256);
+byte[] compressed = util.compress(rawBytes);
+byte[] original   = util.decompress(compressed, 0);
+```
+
+→ Полная документация: [Compression.md](Compression.md)
 
 ---
 
-### EncryptionInterceptor
+### EncryptionInterceptor ⚠️ не PacketInterceptor / NOT a PacketInterceptor
 
-AES-128-GCM на уровне конвейера. Для прозрачного шифрования всего соединения используй `.encrypt(key)` в Builder — см. [Шифрование](Encryption.md).
+Аналогично: **не реализует** `PacketInterceptor`. Прозрачное шифрование — только `.encrypt(key)` в Builder.  
+> Same: does **not** implement `PacketInterceptor`. Transparent encryption via `.encrypt(key)` in Builder only.
 
 ```java
-new EncryptionInterceptor(secretKey)
-// encrypt(byte[]) / decrypt(byte[]) — публичные методы для ручного использования
+Net.server().encrypt(secretKey).start();  // ← правильно / correct
+
+// Ручное использование / Manual use:
+EncryptionInterceptor util = new EncryptionInterceptor(key);
+byte[] encrypted  = util.encrypt(plaintext);
+byte[] decrypted  = util.decrypt(encrypted);
 ```
+
+→ Полная документация: [Encryption.md](Encryption.md)
 
 ---
 

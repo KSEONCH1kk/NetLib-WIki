@@ -18,6 +18,8 @@
 | [Реестр пакетов](Registry.md) | Packet Registry | `PacketRegistry`, авто-сканирование |
 | [Конвейер](Pipeline.md) | Pipeline | `PacketInterceptor`, встроенные перехватчики |
 | [Шифрование](Encryption.md) | Encryption | AES-128-GCM, прозрачное шифрование |
+| [Сжатие](Compression.md) | Compression | zlib, прозрачное сжатие, `.compress(threshold)` |
+| [UDP](UDP.md) | UDP | `UdpEndpoint`, `ConnectedUdpClient`, отличия от TCP |
 | [Сервер](Server.md) | Server | `NetworkServer`, `NetworkServerBuilder` |
 | [Клиент](Client.md) | Client | `NetworkClient`, переподключение |
 | [Обработчики](Handlers.md) | Handlers | `@PacketHandler`, `@NetworkListener` |

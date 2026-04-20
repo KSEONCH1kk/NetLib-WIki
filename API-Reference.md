@@ -5,6 +5,7 @@
 ```java
 Net.server()    // → NetworkServerBuilder
 Net.client()    // → NetworkClientBuilder
+Net.udp()       // → NetworkUdpBuilder
 Net.registry()  // → PacketRegistry (пустой / empty)
 ```
 
@@ -21,7 +22,8 @@ Net.registry()  // → PacketRegistry (пустой / empty)
 | `.workerThreads(int)` | `CPU * 2` | Потоки I/O |
 | `.listener(Object)` | — | `@NetworkListener` инстанс |
 | `.interceptor(PacketInterceptor)` | — | Добавить в pipeline |
-| `.encrypt(SecretKey)` | `null` | AES-128-GCM |
+| `.encrypt(SecretKey)` | `null` | AES-128-GCM (Netty-уровень) |
+| `.compress(int threshold)` | `-1` (выкл) | zlib deflate (Netty-уровень) |
 | `.option(ChannelOption, T)` | — | Netty channel option |
 | `.start()` | — | **Запустить** → `NetworkServer` |
 
@@ -50,7 +52,8 @@ server.close()                                 // alias for shutdown()
 | `.codec(PacketRegistry)` | empty | Реестр пакетов |
 | `.listener(Object)` | — | `@NetworkListener` инстанс |
 | `.interceptor(PacketInterceptor)` | — | Добавить в pipeline |
-| `.encrypt(SecretKey)` | `null` | AES-128-GCM |
+| `.encrypt(SecretKey)` | `null` | AES-128-GCM (Netty-уровень) |
+| `.compress(int threshold)` | `-1` (выкл) | zlib deflate (Netty-уровень) |
 | `.reconnect(boolean)` | `false` | Авто-переподключение |
 | `.reconnectDelay(Duration)` | `5s` | Задержка переподключения |
 | `.connect(String, int)` | — | **Async** → `CompletableFuture<NetworkClient>` |
@@ -67,6 +70,41 @@ client.disconnect()
 client.isConnected()          // → boolean
 client.context()              // → NetworkContext
 client.close()                // alias for disconnect()
+```
+
+---
+
+## NetworkUdpBuilder
+
+| Метод | По умолчанию | Описание |
+|-------|-------------|----------|
+| `.host(String)` | `"0.0.0.0"` | Адрес бинда |
+| `.port(int)` | `0` (эфемерный) | Порт |
+| `.codec(PacketRegistry)` | empty | Реестр пакетов |
+| `.listener(Object)` | — | `@NetworkListener` инстанс |
+| `.bind()` | — | **Серверная роль** → `UdpEndpoint` |
+| `.connect(String, int)` | — | **Клиентская роль** → `ConnectedUdpClient` |
+
+## UdpEndpoint
+
+```java
+endpoint.send(Packet, InetSocketAddress)
+endpoint.broadcast(Packet, Iterable<InetSocketAddress>)
+endpoint.localAddress()    // → InetSocketAddress
+endpoint.isOpen()          // → boolean
+endpoint.shutdown()
+endpoint.close()           // alias for shutdown()
+```
+
+## ConnectedUdpClient
+
+```java
+client.send(Packet)                         // адрес зафиксирован / address fixed
+client.sendAsync(Packet)                    // → CompletableFuture<Void>
+client.serverAddress()                      // → InetSocketAddress
+client.isOpen()                             // → boolean
+client.disconnect()
+client.close()
 ```
 
 ---
@@ -170,19 +208,29 @@ attr.compareAndSet(T expected, T update)  // → boolean
 
 ---
 
-## Built-in Interceptors
+## Built-in PacketInterceptors (pipeline)
 
 ```java
+// Реализуют PacketInterceptor — работают через .interceptor() / Implement PacketInterceptor
 new LoggingInterceptor()
 new LoggingInterceptor(Level level)
 
+new RateLimitInterceptor(double tokensPerSecond, long burstCapacity)
+```
+
+## Utility Classes (NOT PacketInterceptor)
+
+```java
+// НЕ реализуют PacketInterceptor — только утилитные методы
+// Do NOT implement PacketInterceptor — utility methods only
+// Use .compress(threshold) / .encrypt(key) on Builder for wire-level transforms
+
 new CompressionInterceptor(int threshold)
-// .compress(byte[]) → byte[]
-// .decompress(byte[], int expectedSize) → byte[]
+// .compress(byte[])               → byte[]   (zlib deflate)
+// .decompress(byte[], int hint)   → byte[]   (zlib inflate)
+// .threshold()                    → int
 
 new EncryptionInterceptor(SecretKey key)
-// .encrypt(byte[]) → byte[]
-// .decrypt(byte[]) → byte[]
-
-new RateLimitInterceptor(double tokensPerSecond, long burstCapacity)
+// .encrypt(byte[])                → byte[]   (AES-128-GCM, random IV prepended)
+// .decrypt(byte[])                → byte[]
 ```
