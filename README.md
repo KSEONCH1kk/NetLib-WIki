@@ -1,5 +1,5 @@
 # NetLib — Документация / Documentation
-https://sobaka.intave.tech:3000/bus/f7fdcb9c-7e43-48a5-bc94-235a94e769be
+
 **NetLib** (`ru.kseonyt.net`) — аннотационно-управляемая сетевая библиотека для Java 17, построенная на Netty 4.1.  
 Вдохновлена Proton / Unity Networking: ноль шаблонного кода, полный ООП, строгий SOLID.
 
